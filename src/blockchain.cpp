@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdint>
 #include <stdexcept>
 #include <utility>
 
@@ -108,6 +109,19 @@ bool Blockchain::is_valid() const {
         }
     }
     return true;
+}
+
+ValidationReport Blockchain::validate_with_metrics() const {
+    const auto start = std::chrono::steady_clock::now();
+
+    ValidationReport report;
+    report.valid = is_valid();
+    report.blocks_checked = chain_.size();
+
+    const auto end = std::chrono::steady_clock::now();
+    report.elapsed_microseconds = static_cast<std::uint64_t>(
+        std::chrono::duration_cast<std::chrono::microseconds>(end - start).count());
+    return report;
 }
 
 }  // namespace elit21

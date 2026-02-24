@@ -7,12 +7,19 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(ELIT21_BUILD_TESTS "Build ELIT21coin tests" ON)
 option(ELIT21_ENABLE_SANITIZERS "Enable Address/Undefined sanitizers on supported compilers" OFF)
+option(ELIT21_WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
 
 add_library(elit21_warnings INTERFACE)
 if(MSVC)
     target_compile_options(elit21_warnings INTERFACE /W4 /permissive-)
+    if(ELIT21_WARNINGS_AS_ERRORS)
+        target_compile_options(elit21_warnings INTERFACE /WX)
+    endif()
 else()
     target_compile_options(elit21_warnings INTERFACE -Wall -Wextra -Wpedantic -Wconversion)
+    if(ELIT21_WARNINGS_AS_ERRORS)
+        target_compile_options(elit21_warnings INTERFACE -Werror)
+    endif()
 endif()
 
 add_library(elit21core
