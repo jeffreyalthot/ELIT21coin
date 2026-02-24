@@ -3,6 +3,7 @@
 #include <cassert>
 #include <iostream>
 #include <stdexcept>
+#include <vector>
 
 int main() {
     {
@@ -37,6 +38,40 @@ int main() {
 
         try {
             chain.accept_from_network(compressed);
+        } catch (const std::runtime_error&) {
+            caught = true;
+        }
+        assert(caught);
+    }
+
+    {
+        elit21::Blockchain chain("RLE");
+        auto block = chain.create_block("tx:raw-fallback");
+        auto compressed = chain.compress_for_transport(block, {"RAW", "UNKNOWN"});
+        assert(compressed.codec == "RAW");
+        chain.accept_from_network(compressed);
+        assert(chain.chain().size() == 2);
+    }
+
+    {
+        bool caught = false;
+        elit21::Blockchain chain;
+        auto block = chain.create_block("tx:no-common-codec");
+        try {
+            (void)chain.compress_for_transport(block, {"UNKNOWN"});
+        } catch (const std::runtime_error&) {
+            caught = true;
+        }
+        assert(caught);
+    }
+
+    {
+        bool caught = false;
+        elit21::CompressedBlock invalid;
+        invalid.codec = "UNSUPPORTED";
+        invalid.bytes = "abc";
+        try {
+            (void)elit21::decompress_block(invalid);
         } catch (const std::runtime_error&) {
             caught = true;
         }
