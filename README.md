@@ -32,6 +32,7 @@ ctest --test-dir build --output-on-failure
 - Mempool locale avec tri des transactions par frais pour la production de blocs.
 - Portefeuille local avec signature déterministe, gestion de nonce et contrôle de solde.
 - Nœud applicatif (`elit21::Node`) orchestrant wallets + mempool + blockchain.
+- Audit de préparation (`ReadinessReport`) exportable en Markdown pour valider l'état de développement du nœud.
 
 
 ## Options CMake

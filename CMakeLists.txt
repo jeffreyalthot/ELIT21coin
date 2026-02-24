@@ -32,6 +32,7 @@ add_library(elit21core
     src/mempool.cpp
     src/wallet.cpp
     src/node.cpp
+    src/readiness.cpp
 )
 
 target_include_directories(elit21core

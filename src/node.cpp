@@ -78,6 +78,24 @@ const Blockchain& Node::chain() const {
     return blockchain_;
 }
 
+ReadinessReport Node::readiness_report(std::size_t min_wallets,
+                                       std::size_t max_mempool_threshold,
+                                       std::size_t min_chain_height) const {
+    std::map<std::string, std::uint64_t> balances;
+    for (const auto& [address, wallet] : wallets_) {
+        balances[address] = wallet.balance();
+    }
+
+    return evaluate_readiness(blockchain_,
+                              mempool_.size(),
+                              balances,
+                              min_wallets,
+                              max_mempool_threshold,
+                              min_chain_height,
+                              {"RLE", "RAW"});
+}
+
+
 std::string Node::encode_transactions(const std::vector<Transaction>& txs) {
     std::ostringstream os;
     os << txs.size() << '\n';

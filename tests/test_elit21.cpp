@@ -201,6 +201,30 @@ int main() {
         assert(caught);
     }
 
+
+    {
+        elit21::Node node("RAW");
+        node.register_wallet("alice", "alice-secret", 1'000);
+        node.register_wallet("bob", "bob-secret", 50);
+
+        auto payment = node.wallet("alice").create_signed_payment("bob", 100, 1, "bootstrap");
+        node.submit(payment);
+        auto block = node.forge_block_from_mempool(10);
+        node.commit_local_block(block);
+
+        const auto readiness = node.readiness_report(2, 100, 2);
+        assert(readiness.ready_for_development);
+        assert(readiness.wallets_registered == 2);
+        assert(readiness.chain_height >= 2);
+    }
+
+    {
+        elit21::Node node;
+        node.register_wallet("solo", "solo-secret", 100);
+        const auto readiness = node.readiness_report(2, 100, 2);
+        assert(!readiness.ready_for_development);
+    }
+
     std::cout << "All tests passed.\n";
     return 0;
 }
