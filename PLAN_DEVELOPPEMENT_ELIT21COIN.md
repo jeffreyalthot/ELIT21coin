@@ -23,6 +23,11 @@ Ce document contient **25 000 étapes** sous forme de cases à cocher, sans num�
 - [x] Valider la robustesse avec des données corrompues et incomplètes.
 - [x] Vérifier la cohérence de la chaîne (hash, index, previous hash) après décompression.
 
+- [x] Ajouter un garde-fou d'horodatage futur pour bloquer les blocs réseau dépassant une dérive maximale configurable.
+- [x] Enrichir le rapport de validation avec l'index du bloc en échec et la raison détaillée de rejet.
+- [x] Ajouter une option CMake d'optimisation inter-procédurale (IPO/LTO) activable pour les builds release.
+- [x] Ajouter des tests automatisés pour la dérive temporelle future et les configurations invalides de dérive maximale.
+
 ## Domaine: Vision produit et gouvernance
 
 - [ ] Pour **vision produit et gouvernance**, définir un objectif vérifiable et partagé avec l'équipe en impliquant l'équipe protocole, sécurité et produit.

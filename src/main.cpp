@@ -19,5 +19,9 @@ int main() {
     const auto report = chain.validate_with_metrics();
     std::cout << "Validation blocks checked: " << report.blocks_checked << "\n";
     std::cout << "Validation latency (us): " << report.elapsed_microseconds << "\n";
-    return chain.is_valid() ? 0 : 1;
+    if (!report.valid) {
+        std::cout << "Validation failed at block: " << report.failed_block_index << "\n";
+        std::cout << "Validation reason: " << report.failure_reason << "\n";
+    }
+    return report.valid ? 0 : 1;
 }
