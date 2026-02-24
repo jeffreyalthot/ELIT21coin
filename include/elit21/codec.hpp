@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstddef>
 #include <string>
 #include <vector>
 
@@ -15,6 +16,6 @@ struct CompressedBlock {
 [[nodiscard]] std::vector<std::string> supported_codecs();
 [[nodiscard]] bool is_supported_codec(const std::string& codec);
 [[nodiscard]] CompressedBlock compress_block(const std::string& raw_block, const std::string& codec = "RLE");
-[[nodiscard]] std::string decompress_block(const CompressedBlock& compressed);
+[[nodiscard]] std::string decompress_block(const CompressedBlock& compressed, std::size_t max_output_bytes = 1024 * 1024);
 
 }  // namespace elit21

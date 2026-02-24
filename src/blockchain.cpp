@@ -7,9 +7,13 @@
 
 namespace elit21 {
 
-Blockchain::Blockchain(std::string preferred_codec) : preferred_codec_(std::move(preferred_codec)) {
+Blockchain::Blockchain(std::string preferred_codec, std::size_t max_transport_block_bytes)
+    : preferred_codec_(std::move(preferred_codec)), max_transport_block_bytes_(max_transport_block_bytes) {
     if (!is_supported_codec(preferred_codec_)) {
         throw std::runtime_error("unsupported preferred codec");
+    }
+    if (max_transport_block_bytes_ == 0) {
+        throw std::runtime_error("max transport block bytes must be > 0");
     }
 
     Block genesis;
@@ -57,7 +61,7 @@ std::string Blockchain::negotiate_codec(const std::vector<std::string>& peer_cod
 }
 
 void Blockchain::accept_from_network(const CompressedBlock& compressed_block) {
-    const auto raw = decompress_block(compressed_block);
+    const auto raw = decompress_block(compressed_block, max_transport_block_bytes_);
     const auto block = Block::deserialize(raw);
 
     if (block.header.index != chain_.size()) {

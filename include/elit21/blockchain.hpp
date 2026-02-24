@@ -3,13 +3,14 @@
 #include "elit21/block.hpp"
 #include "elit21/codec.hpp"
 
+#include <cstddef>
 #include <vector>
 
 namespace elit21 {
 
 class Blockchain {
   public:
-    explicit Blockchain(std::string preferred_codec = "RLE");
+    explicit Blockchain(std::string preferred_codec = "RLE", std::size_t max_transport_block_bytes = 1024 * 1024);
 
     [[nodiscard]] const std::vector<Block>& chain() const { return chain_; }
     [[nodiscard]] Block create_block(const std::string& payload) const;
@@ -24,6 +25,7 @@ class Blockchain {
 
     std::vector<Block> chain_;
     std::string preferred_codec_;
+    std::size_t max_transport_block_bytes_;
 };
 
 }  // namespace elit21

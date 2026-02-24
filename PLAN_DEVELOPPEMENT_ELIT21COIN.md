@@ -4,6 +4,10 @@ Ce document contient **25 000 étapes** sous forme de cases à cocher, sans num�
 
 ## Étapes effectuées (implémentées en C++)
 
+- [x] Ajouter un garde-fou de taille maximale décompressée pour limiter les blocs de transport oversized.
+- [x] Rejeter explicitement une configuration invalide de limite de taille (0 octet) côté nœud.
+- [x] Renforcer CMakeLists.txt avec warnings cross-plateforme et option de sanitizers.
+
 - [x] Ajouter un codec RAW de repli pour les pairs ne supportant pas la compression RLE.
 - [x] Implémenter une négociation de codec entre nœuds avec sélection du premier codec mutuellement supporté.
 - [x] Renforcer la validation de chaîne avec contrôle de monotonicité temporelle des blocs.
