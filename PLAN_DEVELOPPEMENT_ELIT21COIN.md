@@ -2,6 +2,15 @@
 
 Ce document contient **25 000 étapes** sous forme de cases à cocher, sans numérotation séquentielle, pour guider la production complète d'ELIT21coin, y compris la **compression et décompression des blocs** pour un stockage léger.
 
+## Étapes effectuées (implémentées en C++)
+
+- [x] Concevoir un format de bloc compressé avec en-tête explicite de version.
+- [x] Implémenter un pipeline de décompression déterministe avant validation.
+- [x] Gérer la détection automatique du codec et la négociation entre nœuds (version/codec supportés).
+- [x] Ajouter des tests automatisés couvrant les cas nominal et d'échec.
+- [x] Valider la robustesse avec des données corrompues et incomplètes.
+- [x] Vérifier la cohérence de la chaîne (hash, index, previous hash) après décompression.
+
 ## Domaine: Vision produit et gouvernance
 
 - [ ] Pour **vision produit et gouvernance**, définir un objectif vérifiable et partagé avec l'équipe en impliquant l'équipe protocole, sécurité et produit.
