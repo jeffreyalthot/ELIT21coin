@@ -152,6 +152,55 @@ int main() {
     {
         bool caught = false;
         elit21::Node node;
+        node.register_wallet("alice", "alice-secret", 100);
+        node.register_wallet("bob", "bob-secret", 0);
+
+        auto payment1 = node.wallet("alice").create_signed_payment("bob", 60, 1, "overspend-1");
+        auto payment2 = node.wallet("alice").create_signed_payment("bob", 60, 1, "overspend-2");
+        node.submit(payment1);
+        node.submit(payment2);
+        auto block = node.forge_block_from_mempool(10);
+
+        try {
+            node.commit_local_block(block);
+        } catch (const std::runtime_error&) {
+            caught = true;
+        }
+
+        assert(caught);
+        assert(node.wallet("alice").balance() == 100);
+        assert(node.wallet("bob").balance() == 0);
+        assert(node.mempool_size() == 2);
+        assert(node.chain().chain().size() == 1);
+    }
+
+    {
+        bool caught = false;
+        elit21::Node node;
+        node.register_wallet("alice", "alice-secret", 200);
+        node.register_wallet("bob", "bob-secret", 0);
+
+        auto payment = node.wallet("alice").create_signed_payment("bob", 40, 1, "first-commit");
+        node.submit(payment);
+        auto block = node.forge_block_from_mempool(10);
+        node.commit_local_block(block);
+
+        try {
+            node.commit_local_block(block);
+        } catch (const std::runtime_error&) {
+            caught = true;
+        }
+
+        assert(caught);
+        assert(node.wallet("alice").balance() == 159);
+        assert(node.wallet("bob").balance() == 40);
+        assert(node.mempool_size() == 0);
+        assert(node.chain().chain().size() == 2);
+    }
+
+    {
+        bool caught = false;
+        elit21::Node node;
         node.register_wallet("alice", "alice-secret", 50);
         node.register_wallet("bob", "bob-secret", 0);
 

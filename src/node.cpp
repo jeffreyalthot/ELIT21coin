@@ -62,6 +62,38 @@ Block Node::forge_block_from_mempool(std::size_t max_transactions) {
 
 void Node::commit_local_block(const Block& block) {
     const auto txs = decode_transactions(block.payload);
+
+    std::map<std::string, std::uint64_t> projected_balances;
+    for (const auto& [address, wallet] : wallets_) {
+        projected_balances.emplace(address, wallet.balance());
+    }
+
+    for (const auto& tx : txs) {
+        if (!is_valid_transaction(tx)) {
+            throw std::runtime_error("invalid transaction in block payload");
+        }
+
+        auto sender_it = projected_balances.find(tx.from);
+        if (sender_it == projected_balances.end()) {
+            throw std::runtime_error("unknown sender in block payload");
+        }
+        auto receiver_it = projected_balances.find(tx.to);
+        if (receiver_it == projected_balances.end()) {
+            throw std::runtime_error("unknown receiver in block payload");
+        }
+
+        const auto total_cost = tx.amount + tx.fee;
+        if (sender_it->second < total_cost) {
+            throw std::runtime_error("insufficient sender balance in block payload");
+        }
+
+        sender_it->second -= total_cost;
+        receiver_it->second += tx.amount;
+    }
+
+    const auto compressed = blockchain_.compress_for_transport(block, {"RLE", "RAW"});
+    blockchain_.accept_from_network(compressed);
+
     for (const auto& tx : txs) {
         auto& sender = wallet(tx.from);
         auto& receiver = wallet(tx.to);
@@ -69,9 +101,6 @@ void Node::commit_local_block(const Block& block) {
         receiver.apply_credit(tx.amount);
     }
     mempool_.remove_committed(txs);
-
-    const auto compressed = blockchain_.compress_for_transport(block, {"RLE", "RAW"});
-    blockchain_.accept_from_network(compressed);
 }
 
 const Blockchain& Node::chain() const {
