@@ -6,6 +6,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(ELIT21_BUILD_TESTS "Build ELIT21coin tests" ON)
+option(ELIT21_ENABLE_SANITIZERS "Enable Address/Undefined sanitizers on supported compilers" OFF)
+
+add_library(elit21_warnings INTERFACE)
+if(MSVC)
+    target_compile_options(elit21_warnings INTERFACE /W4 /permissive-)
+else()
+    target_compile_options(elit21_warnings INTERFACE -Wall -Wextra -Wpedantic -Wconversion)
+endif()
 
 add_library(elit21core
     src/block.cpp
@@ -17,19 +25,21 @@ target_include_directories(elit21core
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
+target_link_libraries(elit21core PUBLIC elit21_warnings)
 
-target_compile_options(elit21core PRIVATE -Wall -Wextra -Wpedantic)
+if(ELIT21_ENABLE_SANITIZERS AND NOT MSVC)
+    target_compile_options(elit21core PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
+    target_link_options(elit21core PRIVATE -fsanitize=address,undefined)
+endif()
 
 add_executable(elit21_demo src/main.cpp)
-target_link_libraries(elit21_demo PRIVATE elit21core)
-target_compile_options(elit21_demo PRIVATE -Wall -Wextra -Wpedantic)
+target_link_libraries(elit21_demo PRIVATE elit21core elit21_warnings)
 
 if(ELIT21_BUILD_TESTS)
     include(CTest)
     enable_testing()
 
     add_executable(elit21_tests tests/test_elit21.cpp)
-    target_link_libraries(elit21_tests PRIVATE elit21core)
-    target_compile_options(elit21_tests PRIVATE -Wall -Wextra -Wpedantic)
+    target_link_libraries(elit21_tests PRIVATE elit21core elit21_warnings)
     add_test(NAME elit21_tests COMMAND elit21_tests)
 endif()

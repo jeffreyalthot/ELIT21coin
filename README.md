@@ -27,3 +27,10 @@ ctest --test-dir build --output-on-failure
 - Compression transport avec codec `RLE` ou `RAW`.
 - Négociation de codec selon les capacités du pair distant.
 - Rejet des blocs réseau corrompus, non supportés ou incohérents temporellement.
+- Garde-fou configurable sur la taille maximale décompressée des blocs réseau.
+
+
+## Options CMake
+
+- `-DELIT21_BUILD_TESTS=ON|OFF` active ou non la compilation des tests.
+- `-DELIT21_ENABLE_SANITIZERS=ON` active ASan/UBSan (hors MSVC).

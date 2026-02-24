@@ -51,7 +51,7 @@ CompressedBlock compress_block(const std::string& raw_block, const std::string& 
     return out;
 }
 
-std::string decompress_block(const CompressedBlock& compressed) {
+std::string decompress_block(const CompressedBlock& compressed, std::size_t max_output_bytes) {
     if (compressed.version != 1) {
         throw std::runtime_error("unsupported compressed block version");
     }
@@ -60,6 +60,9 @@ std::string decompress_block(const CompressedBlock& compressed) {
     }
 
     if (compressed.codec == "RAW") {
+        if (compressed.bytes.size() > max_output_bytes) {
+            throw std::runtime_error("decompressed payload exceeds configured limit");
+        }
         return compressed.bytes;
     }
 
@@ -74,6 +77,9 @@ std::string decompress_block(const CompressedBlock& compressed) {
             throw std::runtime_error("invalid run-length 0");
         }
         const char value = compressed.bytes[i + 1];
+        if (raw.size() + count > max_output_bytes) {
+            throw std::runtime_error("decompressed payload exceeds configured limit");
+        }
         raw.append(count, value);
     }
     return raw;

@@ -78,6 +78,44 @@ int main() {
         assert(caught);
     }
 
+
+    {
+        bool caught = false;
+        elit21::CompressedBlock oversized_raw;
+        oversized_raw.codec = "RAW";
+        oversized_raw.bytes = "012345";
+        try {
+            (void)elit21::decompress_block(oversized_raw, 4);
+        } catch (const std::runtime_error&) {
+            caught = true;
+        }
+        assert(caught);
+    }
+
+    {
+        bool caught = false;
+        elit21::Blockchain chain;
+        auto block = chain.create_block("AAAAAAAAAAAA");
+        auto compressed = chain.compress_for_transport(block);
+        try {
+            elit21::Blockchain strict_chain("RLE", 8);
+            strict_chain.accept_from_network(compressed);
+        } catch (const std::runtime_error&) {
+            caught = true;
+        }
+        assert(caught);
+    }
+
+    {
+        bool caught = false;
+        try {
+            (void)elit21::Blockchain("RLE", 0);
+        } catch (const std::runtime_error&) {
+            caught = true;
+        }
+        assert(caught);
+    }
+
     std::cout << "All tests passed.\n";
     return 0;
 }
