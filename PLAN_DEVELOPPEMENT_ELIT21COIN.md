@@ -4,6 +4,10 @@ Ce document contient **25 000 étapes** sous forme de cases à cocher, sans num�
 
 ## Étapes effectuées (implémentées en C++)
 
+- [x] Ajouter un rapport de validation avec métriques de latence pour mesurer le coût de vérification de la chaîne.
+- [x] Exposer des métriques de validation dans la démo CLI pour un suivi rapide en environnement local.
+- [x] Ajouter un test automatisé garantissant la validité et le comptage des blocs dans le rapport de validation.
+
 - [x] Ajouter un garde-fou de taille maximale décompressée pour limiter les blocs de transport oversized.
 - [x] Rejeter explicitement une configuration invalide de limite de taille (0 octet) côté nœud.
 - [x] Renforcer CMakeLists.txt avec warnings cross-plateforme et option de sanitizers.

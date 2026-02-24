@@ -3,10 +3,17 @@
 #include "elit21/block.hpp"
 #include "elit21/codec.hpp"
 
+#include <cstdint>
 #include <cstddef>
 #include <vector>
 
 namespace elit21 {
+
+struct ValidationReport {
+    bool valid{false};
+    std::size_t blocks_checked{0};
+    std::uint64_t elapsed_microseconds{0};
+};
 
 class Blockchain {
   public:
@@ -19,6 +26,7 @@ class Blockchain {
 
     void accept_from_network(const CompressedBlock& compressed_block);
     [[nodiscard]] bool is_valid() const;
+    [[nodiscard]] ValidationReport validate_with_metrics() const;
 
   private:
     [[nodiscard]] std::string negotiate_codec(const std::vector<std::string>& peer_codecs) const;

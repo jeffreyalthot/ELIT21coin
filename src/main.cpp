@@ -15,5 +15,9 @@ int main() {
     std::cout << "Chain valid: " << (chain.is_valid() ? "yes" : "no") << "\n";
     std::cout << "Negotiated codec: " << compressed.codec << "\n";
     std::cout << "Transport bytes: " << compressed.bytes.size() << "\n";
+
+    const auto report = chain.validate_with_metrics();
+    std::cout << "Validation blocks checked: " << report.blocks_checked << "\n";
+    std::cout << "Validation latency (us): " << report.elapsed_microseconds << "\n";
     return chain.is_valid() ? 0 : 1;
 }

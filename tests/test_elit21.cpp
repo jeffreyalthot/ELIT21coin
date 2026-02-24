@@ -116,6 +116,14 @@ int main() {
         assert(caught);
     }
 
+
+    {
+        elit21::Blockchain chain;
+        auto report = chain.validate_with_metrics();
+        assert(report.valid);
+        assert(report.blocks_checked == 1);
+    }
+
     std::cout << "All tests passed.\n";
     return 0;
 }
