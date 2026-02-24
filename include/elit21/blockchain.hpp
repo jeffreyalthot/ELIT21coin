@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <string>
 #include <vector>
 
 namespace elit21 {
@@ -13,11 +14,15 @@ struct ValidationReport {
     bool valid{false};
     std::size_t blocks_checked{0};
     std::uint64_t elapsed_microseconds{0};
+    std::size_t failed_block_index{0};
+    std::string failure_reason;
 };
 
 class Blockchain {
   public:
-    explicit Blockchain(std::string preferred_codec = "RLE", std::size_t max_transport_block_bytes = 1024 * 1024);
+    explicit Blockchain(std::string preferred_codec = "RLE",
+                        std::size_t max_transport_block_bytes = 1024 * 1024,
+                        std::uint64_t max_future_drift_seconds = 120);
 
     [[nodiscard]] const std::vector<Block>& chain() const { return chain_; }
     [[nodiscard]] Block create_block(const std::string& payload) const;
@@ -34,6 +39,7 @@ class Blockchain {
     std::vector<Block> chain_;
     std::string preferred_codec_;
     std::size_t max_transport_block_bytes_;
+    std::uint64_t max_future_drift_seconds_;
 };
 
 }  // namespace elit21

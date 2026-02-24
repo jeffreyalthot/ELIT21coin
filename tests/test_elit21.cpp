@@ -1,6 +1,7 @@
 #include "elit21/blockchain.hpp"
 
 #include <cassert>
+#include <chrono>
 #include <iostream>
 #include <stdexcept>
 #include <vector>
@@ -118,10 +119,47 @@ int main() {
 
 
     {
+        bool caught = false;
+        try {
+            (void)elit21::Blockchain("RLE", 1024 * 1024, 0);
+        } catch (const std::runtime_error&) {
+            caught = true;
+        }
+        assert(caught);
+    }
+
+    {
+        bool caught = false;
+        elit21::Blockchain chain("RAW", 1024 * 1024, 5);
+        const auto& previous = chain.chain().back();
+
+        elit21::Block forged;
+        forged.header.index = 1;
+        const auto now = static_cast<std::uint64_t>(
+            std::chrono::duration_cast<std::chrono::seconds>(
+                std::chrono::system_clock::now().time_since_epoch())
+                .count());
+        forged.header.timestamp = now + 3600;
+        forged.header.previous_hash = previous.hash;
+        forged.payload = "tx:future";
+        forged.hash = elit21::compute_hash(forged.header, forged.payload);
+
+        auto compressed = chain.compress_for_transport(forged, {"RAW"});
+        try {
+            chain.accept_from_network(compressed);
+        } catch (const std::runtime_error&) {
+            caught = true;
+        }
+        assert(caught);
+    }
+
+
+    {
         elit21::Blockchain chain;
         auto report = chain.validate_with_metrics();
         assert(report.valid);
         assert(report.blocks_checked == 1);
+        assert(report.failure_reason.empty());
     }
 
     std::cout << "All tests passed.\n";

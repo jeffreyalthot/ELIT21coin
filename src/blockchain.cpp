@@ -8,13 +8,20 @@
 
 namespace elit21 {
 
-Blockchain::Blockchain(std::string preferred_codec, std::size_t max_transport_block_bytes)
-    : preferred_codec_(std::move(preferred_codec)), max_transport_block_bytes_(max_transport_block_bytes) {
+Blockchain::Blockchain(std::string preferred_codec,
+                       std::size_t max_transport_block_bytes,
+                       std::uint64_t max_future_drift_seconds)
+    : preferred_codec_(std::move(preferred_codec)),
+      max_transport_block_bytes_(max_transport_block_bytes),
+      max_future_drift_seconds_(max_future_drift_seconds) {
     if (!is_supported_codec(preferred_codec_)) {
         throw std::runtime_error("unsupported preferred codec");
     }
     if (max_transport_block_bytes_ == 0) {
         throw std::runtime_error("max transport block bytes must be > 0");
+    }
+    if (max_future_drift_seconds_ == 0) {
+        throw std::runtime_error("max future drift must be > 0");
     }
 
     Block genesis;
@@ -62,6 +69,10 @@ std::string Blockchain::negotiate_codec(const std::vector<std::string>& peer_cod
 }
 
 void Blockchain::accept_from_network(const CompressedBlock& compressed_block) {
+    const auto now = static_cast<std::uint64_t>(
+        std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count());
     const auto raw = decompress_block(compressed_block, max_transport_block_bytes_);
     const auto block = Block::deserialize(raw);
 
@@ -74,6 +85,9 @@ void Blockchain::accept_from_network(const CompressedBlock& compressed_block) {
     if (block.header.timestamp < chain_.back().header.timestamp) {
         throw std::runtime_error("timestamp regression");
     }
+    if (block.header.timestamp > now + max_future_drift_seconds_) {
+        throw std::runtime_error("timestamp too far in the future");
+    }
     if (block.hash != compute_hash(block.header, block.payload)) {
         throw std::runtime_error("hash mismatch");
     }
@@ -82,41 +96,63 @@ void Blockchain::accept_from_network(const CompressedBlock& compressed_block) {
 }
 
 bool Blockchain::is_valid() const {
-    if (chain_.empty()) {
-        return false;
-    }
-    if (chain_.front().header.index != 0 || chain_.front().header.previous_hash != "GENESIS") {
-        return false;
-    }
-    if (compute_hash(chain_.front().header, chain_.front().payload) != chain_.front().hash) {
-        return false;
-    }
-
-    for (std::size_t i = 1; i < chain_.size(); ++i) {
-        const auto& previous = chain_[i - 1];
-        const auto& current = chain_[i];
-        if (current.header.index != i) {
-            return false;
-        }
-        if (current.header.timestamp < previous.header.timestamp) {
-            return false;
-        }
-        if (current.header.previous_hash != previous.hash) {
-            return false;
-        }
-        if (compute_hash(current.header, current.payload) != current.hash) {
-            return false;
-        }
-    }
-    return true;
+    return validate_with_metrics().valid;
 }
 
 ValidationReport Blockchain::validate_with_metrics() const {
     const auto start = std::chrono::steady_clock::now();
 
     ValidationReport report;
-    report.valid = is_valid();
     report.blocks_checked = chain_.size();
+
+    if (chain_.empty()) {
+        report.failure_reason = "empty chain";
+    } else if (chain_.front().header.index != 0 || chain_.front().header.previous_hash != "GENESIS") {
+        report.failure_reason = "invalid genesis header";
+    } else if (compute_hash(chain_.front().header, chain_.front().payload) != chain_.front().hash) {
+        report.failure_reason = "invalid genesis hash";
+    } else {
+        report.valid = true;
+        const auto now = static_cast<std::uint64_t>(
+            std::chrono::duration_cast<std::chrono::seconds>(
+                std::chrono::system_clock::now().time_since_epoch())
+                .count());
+
+        for (std::size_t i = 1; i < chain_.size(); ++i) {
+            const auto& previous = chain_[i - 1];
+            const auto& current = chain_[i];
+            if (current.header.index != i) {
+                report.valid = false;
+                report.failed_block_index = i;
+                report.failure_reason = "index mismatch";
+                break;
+            }
+            if (current.header.timestamp < previous.header.timestamp) {
+                report.valid = false;
+                report.failed_block_index = i;
+                report.failure_reason = "timestamp regression";
+                break;
+            }
+            if (current.header.timestamp > now + max_future_drift_seconds_) {
+                report.valid = false;
+                report.failed_block_index = i;
+                report.failure_reason = "timestamp too far in the future";
+                break;
+            }
+            if (current.header.previous_hash != previous.hash) {
+                report.valid = false;
+                report.failed_block_index = i;
+                report.failure_reason = "previous hash mismatch";
+                break;
+            }
+            if (compute_hash(current.header, current.payload) != current.hash) {
+                report.valid = false;
+                report.failed_block_index = i;
+                report.failure_reason = "hash mismatch";
+                break;
+            }
+        }
+    }
 
     const auto end = std::chrono::steady_clock::now();
     report.elapsed_microseconds = static_cast<std::uint64_t>(
