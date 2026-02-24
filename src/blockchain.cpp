@@ -1,11 +1,17 @@
 #include "elit21/blockchain.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <stdexcept>
+#include <utility>
 
 namespace elit21 {
 
-Blockchain::Blockchain() {
+Blockchain::Blockchain(std::string preferred_codec) : preferred_codec_(std::move(preferred_codec)) {
+    if (!is_supported_codec(preferred_codec_)) {
+        throw std::runtime_error("unsupported preferred codec");
+    }
+
     Block genesis;
     genesis.header.index = 0;
     genesis.header.timestamp = 0;
@@ -29,7 +35,25 @@ Block Blockchain::create_block(const std::string& payload) const {
 }
 
 CompressedBlock Blockchain::compress_for_transport(const Block& block) const {
-    return compress_block(block.serialize());
+    return compress_block(block.serialize(), preferred_codec_);
+}
+
+CompressedBlock Blockchain::compress_for_transport(const Block& block, const std::vector<std::string>& peer_codecs) const {
+    return compress_block(block.serialize(), negotiate_codec(peer_codecs));
+}
+
+std::string Blockchain::negotiate_codec(const std::vector<std::string>& peer_codecs) const {
+    if (std::find(peer_codecs.begin(), peer_codecs.end(), preferred_codec_) != peer_codecs.end()) {
+        return preferred_codec_;
+    }
+
+    for (const auto& codec : peer_codecs) {
+        if (is_supported_codec(codec)) {
+            return codec;
+        }
+    }
+
+    throw std::runtime_error("no mutually supported codec");
 }
 
 void Blockchain::accept_from_network(const CompressedBlock& compressed_block) {
@@ -42,6 +66,9 @@ void Blockchain::accept_from_network(const CompressedBlock& compressed_block) {
     if (block.header.previous_hash != chain_.back().hash) {
         throw std::runtime_error("previous hash mismatch");
     }
+    if (block.header.timestamp < chain_.back().header.timestamp) {
+        throw std::runtime_error("timestamp regression");
+    }
     if (block.hash != compute_hash(block.header, block.payload)) {
         throw std::runtime_error("hash mismatch");
     }
@@ -53,9 +80,22 @@ bool Blockchain::is_valid() const {
     if (chain_.empty()) {
         return false;
     }
+    if (chain_.front().header.index != 0 || chain_.front().header.previous_hash != "GENESIS") {
+        return false;
+    }
+    if (compute_hash(chain_.front().header, chain_.front().payload) != chain_.front().hash) {
+        return false;
+    }
+
     for (std::size_t i = 1; i < chain_.size(); ++i) {
         const auto& previous = chain_[i - 1];
         const auto& current = chain_[i];
+        if (current.header.index != i) {
+            return false;
+        }
+        if (current.header.timestamp < previous.header.timestamp) {
+            return false;
+        }
         if (current.header.previous_hash != previous.hash) {
             return false;
         }

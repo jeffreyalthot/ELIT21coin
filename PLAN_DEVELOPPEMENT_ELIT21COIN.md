@@ -4,6 +4,10 @@ Ce document contient **25 000 étapes** sous forme de cases à cocher, sans num�
 
 ## Étapes effectuées (implémentées en C++)
 
+- [x] Ajouter un codec RAW de repli pour les pairs ne supportant pas la compression RLE.
+- [x] Implémenter une négociation de codec entre nœuds avec sélection du premier codec mutuellement supporté.
+- [x] Renforcer la validation de chaîne avec contrôle de monotonicité temporelle des blocs.
+- [x] Mettre à jour CMakeLists.txt pour compiler la démo et les tests avec des warnings stricts.
 - [x] Concevoir un format de bloc compressé avec en-tête explicite de version.
 - [x] Implémenter un pipeline de décompression déterministe avant validation.
 - [x] Gérer la détection automatique du codec et la négociation entre nœuds (version/codec supportés).

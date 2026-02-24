@@ -9,17 +9,21 @@ namespace elit21 {
 
 class Blockchain {
   public:
-    Blockchain();
+    explicit Blockchain(std::string preferred_codec = "RLE");
 
     [[nodiscard]] const std::vector<Block>& chain() const { return chain_; }
     [[nodiscard]] Block create_block(const std::string& payload) const;
     [[nodiscard]] CompressedBlock compress_for_transport(const Block& block) const;
+    [[nodiscard]] CompressedBlock compress_for_transport(const Block& block, const std::vector<std::string>& peer_codecs) const;
 
     void accept_from_network(const CompressedBlock& compressed_block);
     [[nodiscard]] bool is_valid() const;
 
   private:
+    [[nodiscard]] std::string negotiate_codec(const std::vector<std::string>& peer_codecs) const;
+
     std::vector<Block> chain_;
+    std::string preferred_codec_;
 };
 
 }  // namespace elit21

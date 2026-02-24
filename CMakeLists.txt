@@ -22,10 +22,14 @@ target_compile_options(elit21core PRIVATE -Wall -Wextra -Wpedantic)
 
 add_executable(elit21_demo src/main.cpp)
 target_link_libraries(elit21_demo PRIVATE elit21core)
+target_compile_options(elit21_demo PRIVATE -Wall -Wextra -Wpedantic)
 
 if(ELIT21_BUILD_TESTS)
+    include(CTest)
     enable_testing()
+
     add_executable(elit21_tests tests/test_elit21.cpp)
     target_link_libraries(elit21_tests PRIVATE elit21core)
+    target_compile_options(elit21_tests PRIVATE -Wall -Wextra -Wpedantic)
     add_test(NAME elit21_tests COMMAND elit21_tests)
 endif()

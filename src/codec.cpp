@@ -1,11 +1,32 @@
 #include "elit21/codec.hpp"
 
+#include <algorithm>
 #include <stdexcept>
 
 namespace elit21 {
 
-CompressedBlock compress_block(const std::string& raw_block) {
+std::vector<std::string> supported_codecs() {
+    return {"RLE", "RAW"};
+}
+
+bool is_supported_codec(const std::string& codec) {
+    const auto codecs = supported_codecs();
+    return std::find(codecs.begin(), codecs.end(), codec) != codecs.end();
+}
+
+CompressedBlock compress_block(const std::string& raw_block, const std::string& codec) {
+    if (!is_supported_codec(codec)) {
+        throw std::runtime_error("unsupported codec");
+    }
+
     CompressedBlock out;
+    out.codec = codec;
+
+    if (codec == "RAW") {
+        out.bytes = raw_block;
+        return out;
+    }
+
     if (raw_block.empty()) {
         return out;
     }
@@ -34,9 +55,14 @@ std::string decompress_block(const CompressedBlock& compressed) {
     if (compressed.version != 1) {
         throw std::runtime_error("unsupported compressed block version");
     }
-    if (compressed.codec != "RLE") {
+    if (!is_supported_codec(compressed.codec)) {
         throw std::runtime_error("unsupported codec");
     }
+
+    if (compressed.codec == "RAW") {
+        return compressed.bytes;
+    }
+
     if (compressed.bytes.size() % 2 != 0) {
         throw std::runtime_error("corrupted compressed bytes");
     }

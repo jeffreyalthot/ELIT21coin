@@ -1,6 +1,6 @@
 # ELIT21coin
 
-Prototype C++ d'une blockchain légère avec compression/décompression déterministe des blocs.
+Prototype C++ d'une blockchain légère avec compression/décompression déterministe des blocs, négociation de codec côté réseau et validation renforcée de l'intégrité de chaîne.
 
 ## Build
 
@@ -20,3 +20,10 @@ cmake --build build
 ```bash
 ctest --test-dir build --output-on-failure
 ```
+
+## Capacités implémentées
+
+- Chaîne avec bloc genesis, contrôle `index`, `previous_hash` et hash calculé.
+- Compression transport avec codec `RLE` ou `RAW`.
+- Négociation de codec selon les capacités du pair distant.
+- Rejet des blocs réseau corrompus, non supportés ou incohérents temporellement.
