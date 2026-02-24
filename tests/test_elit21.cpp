@@ -156,6 +156,39 @@ int main() {
 
     {
         elit21::Blockchain chain;
+        auto block = chain.create_block("tx:alice|bob\nmetadata:1");
+        auto compressed = chain.compress_for_transport(block, {"RAW"});
+        chain.accept_from_network(compressed);
+        assert(chain.chain().back().payload == "tx:alice|bob\nmetadata:1");
+        assert(chain.is_valid());
+    }
+
+    {
+        bool caught = false;
+        elit21::Block block;
+        block.header.index = 1;
+        block.header.timestamp = 42;
+        block.header.previous_hash = "prev";
+        block.payload = "abc";
+        block.hash = elit21::compute_hash(block.header, block.payload);
+
+        auto raw = block.serialize();
+        const auto marker = std::string("|3|");
+        const auto pos = raw.find(marker);
+        assert(pos != std::string::npos);
+        raw.replace(pos, marker.size(), "|10|");
+
+        try {
+            (void)elit21::Block::deserialize(raw);
+        } catch (const std::runtime_error&) {
+            caught = true;
+        }
+        assert(caught);
+    }
+
+
+    {
+        elit21::Blockchain chain;
         auto report = chain.validate_with_metrics();
         assert(report.valid);
         assert(report.blocks_checked == 1);

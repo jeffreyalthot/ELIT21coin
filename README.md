@@ -27,6 +27,7 @@ ctest --test-dir build --output-on-failure
 - Compression transport avec codec `RLE` ou `RAW`.
 - Négociation de codec selon les capacités du pair distant.
 - Rejet des blocs réseau corrompus, non supportés, en régression temporelle ou horodatés trop loin dans le futur.
+- Sérialisation de bloc avec champs préfixés par taille pour supporter les payloads contenant des délimiteurs.
 - Garde-fou configurable sur la taille maximale décompressée des blocs réseau.
 
 
@@ -35,3 +36,4 @@ ctest --test-dir build --output-on-failure
 - `-DELIT21_BUILD_TESTS=ON|OFF` active ou non la compilation des tests.
 - `-DELIT21_ENABLE_SANITIZERS=ON` active ASan/UBSan (hors MSVC).
 - `-DELIT21_ENABLE_IPO=ON` active l'optimisation inter-procédurale (LTO) si supportée.
+- `-DELIT21_ENABLE_CLANG_TIDY=ON` active `clang-tidy` pendant la compilation si l'outil est disponible.

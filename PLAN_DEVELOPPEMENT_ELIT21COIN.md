@@ -28,6 +28,11 @@ Ce document contient **25 000 étapes** sous forme de cases à cocher, sans num�
 - [x] Ajouter une option CMake d'optimisation inter-procédurale (IPO/LTO) activable pour les builds release.
 - [x] Ajouter des tests automatisés pour la dérive temporelle future et les configurations invalides de dérive maximale.
 
+- [x] Renforcer la sérialisation des blocs avec des champs préfixés par taille pour préserver les payloads contenant des délimiteurs.
+- [x] Ajouter des tests automatisés couvrant les payloads avec délimiteurs et les longueurs sérialisées incohérentes.
+- [x] Ajouter une option CMake pour activer clang-tidy et améliorer le contrôle qualité statique.
+
+
 ## Domaine: Vision produit et gouvernance
 
 - [ ] Pour **vision produit et gouvernance**, définir un objectif vérifiable et partagé avec l'équipe en impliquant l'équipe protocole, sécurité et produit.
