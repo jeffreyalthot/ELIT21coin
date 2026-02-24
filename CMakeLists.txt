@@ -9,6 +9,7 @@ option(ELIT21_BUILD_TESTS "Build ELIT21coin tests" ON)
 option(ELIT21_ENABLE_SANITIZERS "Enable Address/Undefined sanitizers on supported compilers" OFF)
 option(ELIT21_WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
 option(ELIT21_ENABLE_IPO "Enable interprocedural optimization (LTO) for release builds" OFF)
+option(ELIT21_ENABLE_CLANG_TIDY "Run clang-tidy during compilation when available" OFF)
 
 add_library(elit21_warnings INTERFACE)
 if(MSVC)
@@ -34,6 +35,15 @@ target_include_directories(elit21core
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 target_link_libraries(elit21core PUBLIC elit21_warnings)
+
+if(ELIT21_ENABLE_CLANG_TIDY)
+    find_program(ELIT21_CLANG_TIDY_EXE NAMES clang-tidy)
+    if(ELIT21_CLANG_TIDY_EXE)
+        set(CMAKE_CXX_CLANG_TIDY "${ELIT21_CLANG_TIDY_EXE}")
+    else()
+        message(WARNING "ELIT21_ENABLE_CLANG_TIDY requested but clang-tidy not found")
+    endif()
+endif()
 
 if(ELIT21_ENABLE_SANITIZERS AND NOT MSVC)
     target_compile_options(elit21core PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
