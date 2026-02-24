@@ -1,27 +1,27 @@
-#include "elit21/blockchain.hpp"
+#include "elit21/node.hpp"
 
+#include <cassert>
 #include <iostream>
-#include <vector>
 
 int main() {
-    elit21::Blockchain chain;
+    elit21::Node node("RLE");
+    node.register_wallet("alice", "alice-secret", 1'000);
+    node.register_wallet("bob", "bob-secret", 200);
 
-    auto candidate = chain.create_block("transaction:alice->bob:42");
-    const std::vector<std::string> peer_codecs{"RAW", "RLE"};
-    auto compressed = chain.compress_for_transport(candidate, peer_codecs);
-    chain.accept_from_network(compressed);
+    auto signed_tx = node.wallet("alice").create_signed_payment("bob", 150, 2, "paiement demo");
+    node.submit(signed_tx);
 
-    std::cout << "Chain size: " << chain.chain().size() << "\n";
-    std::cout << "Chain valid: " << (chain.is_valid() ? "yes" : "no") << "\n";
-    std::cout << "Negotiated codec: " << compressed.codec << "\n";
-    std::cout << "Transport bytes: " << compressed.bytes.size() << "\n";
+    auto block = node.forge_block_from_mempool(100);
+    node.commit_local_block(block);
 
-    const auto report = chain.validate_with_metrics();
-    std::cout << "Validation blocks checked: " << report.blocks_checked << "\n";
-    std::cout << "Validation latency (us): " << report.elapsed_microseconds << "\n";
-    if (!report.valid) {
-        std::cout << "Validation failed at block: " << report.failed_block_index << "\n";
-        std::cout << "Validation reason: " << report.failure_reason << "\n";
-    }
-    return report.valid ? 0 : 1;
+    assert(node.chain().chain().size() == 2);
+    assert(node.wallet("alice").balance() == 848);
+    assert(node.wallet("bob").balance() == 350);
+
+    const auto report = node.chain().validate_with_metrics();
+    std::cout << "ELIT21 demo node: valid=" << std::boolalpha << report.valid
+              << ", blocks_checked=" << report.blocks_checked
+              << ", elapsed_us=" << report.elapsed_microseconds << '\n';
+
+    return 0;
 }

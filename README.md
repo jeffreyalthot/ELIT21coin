@@ -29,6 +29,9 @@ ctest --test-dir build --output-on-failure
 - Rejet des blocs réseau corrompus, non supportés, en régression temporelle ou horodatés trop loin dans le futur.
 - Sérialisation de bloc avec champs préfixés par taille pour supporter les payloads contenant des délimiteurs.
 - Garde-fou configurable sur la taille maximale décompressée des blocs réseau.
+- Mempool locale avec tri des transactions par frais pour la production de blocs.
+- Portefeuille local avec signature déterministe, gestion de nonce et contrôle de solde.
+- Nœud applicatif (`elit21::Node`) orchestrant wallets + mempool + blockchain.
 
 
 ## Options CMake

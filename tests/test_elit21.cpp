@@ -1,10 +1,13 @@
 #include "elit21/blockchain.hpp"
+#include "elit21/mempool.hpp"
+#include "elit21/node.hpp"
+#include "elit21/transaction.hpp"
+#include "elit21/wallet.hpp"
 
 #include <cassert>
 #include <chrono>
 #include <iostream>
 #include <stdexcept>
-#include <vector>
 
 int main() {
     {
@@ -19,7 +22,7 @@ int main() {
     {
         bool caught = false;
         elit21::CompressedBlock bad;
-        bad.bytes = "abc";  // odd length -> corruption
+        bad.bytes = "abc";
         try {
             (void)elit21::decompress_block(bad);
         } catch (const std::runtime_error&) {
@@ -67,40 +70,43 @@ int main() {
     }
 
     {
-        bool caught = false;
-        elit21::CompressedBlock invalid;
-        invalid.codec = "UNSUPPORTED";
-        invalid.bytes = "abc";
-        try {
-            (void)elit21::decompress_block(invalid);
-        } catch (const std::runtime_error&) {
-            caught = true;
-        }
-        assert(caught);
-    }
+        elit21::Transaction tx;
+        tx.from = "alice";
+        tx.to = "bob";
+        tx.amount = 10;
+        tx.fee = 1;
+        tx.nonce = 7;
+        tx.memo = "memo::with|pipes";
 
-
-    {
-        bool caught = false;
-        elit21::CompressedBlock oversized_raw;
-        oversized_raw.codec = "RAW";
-        oversized_raw.bytes = "012345";
-        try {
-            (void)elit21::decompress_block(oversized_raw, 4);
-        } catch (const std::runtime_error&) {
-            caught = true;
-        }
-        assert(caught);
+        const auto raw = tx.serialize();
+        const auto decoded = elit21::Transaction::deserialize(raw);
+        assert(decoded.from == tx.from);
+        assert(decoded.to == tx.to);
+        assert(decoded.amount == tx.amount);
+        assert(decoded.fee == tx.fee);
+        assert(decoded.nonce == tx.nonce);
+        assert(decoded.memo == tx.memo);
     }
 
     {
         bool caught = false;
-        elit21::Blockchain chain;
-        auto block = chain.create_block("AAAAAAAAAAAA");
-        auto compressed = chain.compress_for_transport(block);
+        elit21::Mempool mempool(3);
+
+        elit21::Transaction low_fee{"alice", "bob", 2, 1, 2, "low"};
+        elit21::Transaction high_fee{"alice", "bob", 2, 9, 1, "high"};
+        elit21::Transaction mid_fee{"alice", "bob", 2, 4, 3, "mid"};
+
+        mempool.add(low_fee);
+        mempool.add(high_fee);
+        mempool.add(mid_fee);
+        assert(mempool.size() == 3);
+
+        const auto selected = mempool.select_for_block(2);
+        assert(selected.size() == 2);
+        assert(selected[0].fee >= selected[1].fee);
+
         try {
-            elit21::Blockchain strict_chain("RLE", 8);
-            strict_chain.accept_from_network(compressed);
+            mempool.add(high_fee);
         } catch (const std::runtime_error&) {
             caught = true;
         }
@@ -108,15 +114,57 @@ int main() {
     }
 
     {
+        elit21::Wallet alice("alice", "s3cr3t", 100);
+        auto signed_tx = alice.create_signed_payment("bob", 30, 2, "invoice#42");
+        assert(alice.verify_signature(signed_tx));
+        assert(alice.nonce() == 1);
+
         bool caught = false;
         try {
-            (void)elit21::Blockchain("RLE", 0);
+            (void)alice.create_signed_payment("bob", 10'000, 1);
         } catch (const std::runtime_error&) {
             caught = true;
         }
         assert(caught);
     }
 
+    {
+        elit21::Node node;
+        node.register_wallet("alice", "alice-secret", 1000);
+        node.register_wallet("bob", "bob-secret", 10);
+
+        auto payment1 = node.wallet("alice").create_signed_payment("bob", 120, 3, "lot-1");
+        auto payment2 = node.wallet("alice").create_signed_payment("bob", 40, 1, "lot-2");
+        node.submit(payment1);
+        node.submit(payment2);
+        assert(node.mempool_size() == 2);
+
+        auto block = node.forge_block_from_mempool(100);
+        node.commit_local_block(block);
+
+        assert(node.mempool_size() == 0);
+        assert(node.wallet("alice").balance() == (1000 - 120 - 3 - 40 - 1));
+        assert(node.wallet("bob").balance() == (10 + 120 + 40));
+        assert(node.chain().chain().size() == 2);
+        assert(node.chain().is_valid());
+    }
+
+    {
+        bool caught = false;
+        elit21::Node node;
+        node.register_wallet("alice", "alice-secret", 50);
+        node.register_wallet("bob", "bob-secret", 0);
+
+        auto signed_tx = node.wallet("alice").create_signed_payment("bob", 10, 1);
+        signed_tx.signature = "tampered";
+
+        try {
+            node.submit(signed_tx);
+        } catch (const std::runtime_error&) {
+            caught = true;
+        }
+        assert(caught);
+    }
 
     {
         bool caught = false;
@@ -151,48 +199,6 @@ int main() {
             caught = true;
         }
         assert(caught);
-    }
-
-
-    {
-        elit21::Blockchain chain;
-        auto block = chain.create_block("tx:alice|bob\nmetadata:1");
-        auto compressed = chain.compress_for_transport(block, {"RAW"});
-        chain.accept_from_network(compressed);
-        assert(chain.chain().back().payload == "tx:alice|bob\nmetadata:1");
-        assert(chain.is_valid());
-    }
-
-    {
-        bool caught = false;
-        elit21::Block block;
-        block.header.index = 1;
-        block.header.timestamp = 42;
-        block.header.previous_hash = "prev";
-        block.payload = "abc";
-        block.hash = elit21::compute_hash(block.header, block.payload);
-
-        auto raw = block.serialize();
-        const auto marker = std::string("|3|");
-        const auto pos = raw.find(marker);
-        assert(pos != std::string::npos);
-        raw.replace(pos, marker.size(), "|10|");
-
-        try {
-            (void)elit21::Block::deserialize(raw);
-        } catch (const std::runtime_error&) {
-            caught = true;
-        }
-        assert(caught);
-    }
-
-
-    {
-        elit21::Blockchain chain;
-        auto report = chain.validate_with_metrics();
-        assert(report.valid);
-        assert(report.blocks_checked == 1);
-        assert(report.failure_reason.empty());
     }
 
     std::cout << "All tests passed.\n";

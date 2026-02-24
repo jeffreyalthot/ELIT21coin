@@ -28,6 +28,10 @@ add_library(elit21core
     src/block.cpp
     src/codec.cpp
     src/blockchain.cpp
+    src/transaction.cpp
+    src/mempool.cpp
+    src/wallet.cpp
+    src/node.cpp
 )
 
 target_include_directories(elit21core
