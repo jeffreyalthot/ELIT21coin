@@ -3,6 +3,7 @@
 #include "elit21/blockchain.hpp"
 #include "elit21/mempool.hpp"
 #include "elit21/wallet.hpp"
+#include "elit21/readiness.hpp"
 
 #include <cstddef>
 #include <map>
@@ -26,6 +27,9 @@ class Node {
     void commit_local_block(const Block& block);
 
     [[nodiscard]] const Blockchain& chain() const;
+    [[nodiscard]] ReadinessReport readiness_report(std::size_t min_wallets = 2,
+                                                   std::size_t max_mempool_threshold = 500,
+                                                   std::size_t min_chain_height = 2) const;
 
   private:
     [[nodiscard]] static std::string encode_transactions(const std::vector<Transaction>& txs);

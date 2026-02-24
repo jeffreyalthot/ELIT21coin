@@ -23,5 +23,8 @@ int main() {
               << ", blocks_checked=" << report.blocks_checked
               << ", elapsed_us=" << report.elapsed_microseconds << '\n';
 
+    const auto readiness = node.readiness_report();
+    std::cout << readiness.to_markdown() << '\n';
+
     return 0;
 }
